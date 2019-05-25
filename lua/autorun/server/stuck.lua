@@ -5,7 +5,7 @@ hook.Remove("Move", "CheckStuck")
 local STUCK_TIME_HINT = 0.3
 local MAX_STUCK_TIME = 2
 
-local PLAYER = FindMetaTable("PLAYER")
+local PLAYER = FindMetaTable("Player")
 ///////////////////////////////////////////////////////////////////////////////
 // This method sends colored chat message and adds it into the chat
 ///////////////////////////////////////////////////////////////////////////////
@@ -13,7 +13,8 @@ function PLAYER:AddChatText(...)
 	local args = {...}
 	net.Start("AddChatText")
 		// Compress us much as possible
-		net.WriteData(util.Compress(util.TableToJSON(args)))
+		local compressed = util.Compress(util.TableToJSON(args))
+		net.WriteData(compressed, string.len(compressed))
 	net.Send(self)
 end
 
@@ -25,7 +26,7 @@ function MergeTables(...)
 	local result = {}
 
 	for k, v in pairs(args) do
-		table.Merge(v, result)
+		table.Merge(result, v)
 	end
 	return result
 end
@@ -41,8 +42,7 @@ function UnstuckPlayer(ply)
 							 	ents.FindByClass("info_player_counterterrorist"),
 							 	ents.FindByClass("info_player_terrorist")
 							 )
-
-	// Insert into the table entity itself and it distance
+	// Insert into the table entities and their distances
 	for k, v in pairs(nodes) do
 		table.insert(node_distances, {v, ply:GetPos():Distance(v:GetPos())})
 	end
@@ -71,6 +71,8 @@ end
 // Decide if he's stuck or not. We shall put it into the GM:Move hook
 ///////////////////////////////////////////////////////////////////////////////
 function DetectPlayerStuck(ply, cmd)
+	if !IsValid(ply) then return end // Nuh-uh
+	
 	// If player is stuck it counts like he's flying
 	if !ply:IsOnGround() then
 
