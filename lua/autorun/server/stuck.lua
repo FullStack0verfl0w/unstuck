@@ -2,6 +2,16 @@ util.AddNetworkString("AddChatText")
 
 hook.Remove("Move", "CheckStuck")
 
+// Thanks to Silverlan
+local info_nodes = {}
+local _R = debug.getregistry()
+local nodegraph = _R.Nodegraph.Read()
+for _, node in pairs(nodegraph:GetNodes()) do
+	if node.type == NODE_TYPE_GROUND then
+		table.insert(info_nodes, node.pos)
+	end
+end
+
 local STUCK_TIME_HINT = 0.3
 local MAX_STUCK_TIME = 2
 
@@ -35,23 +45,40 @@ end
 // Find the nearest player_start entity and teleport stucked
 // player into it location
 ///////////////////////////////////////////////////////////////////////////////
-function UnstuckPlayer(ply)
+function UnstuckPlayer(ply, force_unstuck)
 	local node_distances = {}
-	local nodes = MergeTables(ents.FindByClass("info_player_deathmatch"),
+	local starts_distances = {}
+	local starts = MergeTables(ents.FindByClass("info_player_deathmatch"),
 							 	ents.FindByClass("info_player_start"),
 							 	ents.FindByClass("info_player_counterterrorist"),
 							 	ents.FindByClass("info_player_terrorist")
 							 )
-	// Insert into the table entities and their distances
-	for k, v in pairs(nodes) do
-		table.insert(node_distances, {v, ply:GetPos():Distance(v:GetPos())})
+	local neareast_point, pos
+
+	// If the map has info_nodes we'll use it
+	if #info_nodes != 0 then
+		// Insert into the table entities and their distances
+		for k, v in pairs(info_nodes) do
+			table.insert(node_distances, {v, ply:GetPos():Distance(v)})
+		end
+		// Sort nodes by distance.
+		// Lowest distance is first
+		table.sort(node_distances, function(a, b) return a[2] < b[2] end)
+		pos = node_distances[1][1]
+
+	// Or nearest player_start spot
+	else
+		// Insert into the table entities and their distances
+		for k, v in pairs(starts) do
+			table.insert(starts_distances, {v, ply:GetPos():Distance(v:GetPos())})
+		end
+		// Sort nodes by distance.
+		// Lowest distance is first
+		table.sort(starts_distances, function(a, b) return a[2] < b[2] end)
+
+		neareast_point = starts_distances[1][1]
+		pos = neareast_point:GetPos()
 	end
-	// Sort nodes by distance.
-	// Lowest distance is first
-	table.sort(node_distances, function(a, b) return a[2] < b[2] end)
-
-	local pos = node_distances[1][1]:GetPos()
-
 	// There's a bug where PLAYER:SetPos
 	// will not work in a Move-like hooks.
 	// So, I did this. :D
@@ -72,10 +99,9 @@ end
 ///////////////////////////////////////////////////////////////////////////////
 function DetectPlayerStuck(ply, cmd)
 	if !IsValid(ply) then return end // Nuh-uh
-	
+
 	// If player is stuck it counts like he's flying
 	if !ply:IsOnGround() then
-
 		// If you're inside the world your z velocity is -4.5
 		// Minus one if block. Plus two commentary lines. Fuck you logic
 		// Anyway, if you're not moving in z for too long...
