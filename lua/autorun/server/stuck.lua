@@ -22,9 +22,8 @@ local PLAYER = FindMetaTable("Player")
 function PLAYER:AddChatText(...)
 	local args = {...}
 	net.Start("AddChatText")
-		// Compress us much as possible
-		local compressed = util.Compress(util.TableToJSON(args))
-		net.WriteData(compressed, string.len(compressed))
+		// util.Compress doesn't damn compress anything. lulz
+		net.WriteTable(args)
 	net.Send(self)
 end
 
