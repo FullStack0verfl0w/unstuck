@@ -12,8 +12,8 @@ for _, node in pairs(nodegraph:GetNodes()) do
 	end
 end
 
-local STUCK_TIME_HINT = 0.3
-local MAX_STUCK_TIME = 2
+local stuck_time_hint = CreateConVar("sv_unstuck_stuck_time_hint", 0.3, FCVAR_ARCHIVE, "How much time (in seconds) the player must be stuck, before it will get a message.")
+local max_stuck_time = CreateConVar("sv_unstuck_max_stuck_time", 2, FCVAR_ARCHIVE, "How much time (in seconds) the player must be stuck, before it will be teleported.")
 
 local PLAYER = FindMetaTable("Player")
 ///////////////////////////////////////////////////////////////////////////////
@@ -106,13 +106,13 @@ function DetectPlayerStuck(ply, cmd)
 		// Anyway, if you're not moving in z for too long...
 		if (cmd:GetVelocity().z == -4.5) then
 			if !ply.is_stuck then
-				ply.stuck_time = CurTime() + STUCK_TIME_HINT
+				ply.stuck_time = CurTime() + stuck_time_hint:GetFloat()
 				ply.is_stuck = true
 			end
 
 			// After we're pretty sure, put up a helpful message
 			if (ply.stuck_time <= CurTime()
-				|| ply.stuck_time + STUCK_TIME_HINT <= CurTime()) then
+				|| ply.stuck_time + stuck_time_hint:GetFloat() <= CurTime()) then
 					if !ply.is_printed then
 						ply:AddChatText(Color(255, 255, 150), "You look like you're stuck.")
 						ply.is_printed = true
@@ -121,7 +121,7 @@ function DetectPlayerStuck(ply, cmd)
 
 			// Now that he's really stuck. Reset variables
 			// and teleport him
-			if (ply.stuck_time + MAX_STUCK_TIME < CurTime()) then
+			if (ply.stuck_time + max_stuck_time:GetFloat() < CurTime()) then
 				ply.stuck_time = 0
 
 				UnstuckPlayer(ply)
