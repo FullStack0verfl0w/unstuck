@@ -22,6 +22,7 @@ local PLAYER = FindMetaTable("Player")
 function PLAYER:AddChatText(...)
 	local args = {...}
 	net.Start("AddChatText")
+		// util.Compress doesn't damn compress anything. lulz
 		net.WriteTable(args)
 	net.Send(self)
 end
@@ -34,9 +35,7 @@ function MergeTables(...)
 	local result = {}
 
 	for k, v in pairs(args) do
-		if istable(v) then
-			table.Merge(result, v)
-		end
+		table.Merge(result, v)
 	end
 	return result
 end
@@ -105,12 +104,11 @@ function DetectPlayerStuck(ply, cmd)
 		// If you're inside the world your z velocity is -4.5
 		// Minus one if block. Plus two commentary lines. Fuck you logic
 		// Anyway, if you're not moving in z for too long...
-		if (cmd:GetVelocity().z == -4.5 ||
-			(ply:GetMoveType() != MOVETYPE_NOCLIP && cmd:GetVelocity().z == 0)) then
-				if !ply.is_stuck then
-					ply.stuck_time = CurTime() + stuck_time_hint:GetFloat()
-					ply.is_stuck = true
-				end
+		if (cmd:GetVelocity().z == -4.5) then
+			if !ply.is_stuck then
+				ply.stuck_time = CurTime() + stuck_time_hint:GetFloat()
+				ply.is_stuck = true
+			end
 
 			// After we're pretty sure, put up a helpful message
 			if (ply.stuck_time <= CurTime()
