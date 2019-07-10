@@ -22,7 +22,6 @@ local PLAYER = FindMetaTable("Player")
 function PLAYER:AddChatText(...)
 	local args = {...}
 	net.Start("AddChatText")
-		// util.Compress doesn't damn compress anything. lulz
 		net.WriteTable(args)
 	net.Send(self)
 end
@@ -35,7 +34,9 @@ function MergeTables(...)
 	local result = {}
 
 	for k, v in pairs(args) do
-		table.Merge(result, v)
+		if istable(v) then
+			table.Merge(result, v)
+		end
 	end
 	return result
 end
